@@ -22,12 +22,18 @@ class Strategy:
         self.binance_api = binance_api.BinanceAPI(self.credentials.binance_key, self.credentials.binance_secret)
         self.twilio = TwilioMessaging()
         self.current_entries = {}
+        self.last_order = None
         self.lower_resistance_level = None
         self.upper_resistance_level = None
         self.target_gain = None
+        self.first_entry_price = None
+        self.second_entry_price = None
+        self.third_entry_price = None
 
         self.bid = None
         self.ask = None
+        self.previous_minute_low = None
+        self.current_close = None
         self.locked_resistance_levels = False
         self.df1 = None
 
@@ -46,7 +52,6 @@ class Strategy:
         # self.max_per_trade = self.settings.allocation
         self.trade_id = None
         
-        
     def update_least_resistance_levels(self):
         
         df1 = self.df1
@@ -62,9 +67,8 @@ class Strategy:
         self.upper_resistance_level = float(least_resistance['R-Level'].values[0])
         self.target_gain = self.upper_resistance_level / self.lower_resistance_level - 1
         self.first_entry_price = self.lower_resistance_level
-        self.second_entry_price = self.lower_resistance_level * (1 + (self.entry_point_scale[1] * self.target_gain))
-        self.third_entry_price = self.lower_resistance_level * (1 + (self.entry_point_scale[2] * self.target_gain))
-
+        self.second_entry_price = self.lower_resistance_level * (1 + (self.target_gain * self.entry_point_scale[1]))
+        self.third_entry_price = self.lower_resistance_level * (1 + (self.target_gain * self.entry_point_scale[2]))                                                  
         logging.info("Lower: {} Upper: {} Target Gain: {}".format(self.lower_resistance_level,
                                                                   self.upper_resistance_level,
                                                                   self.target_gain))
@@ -79,19 +83,16 @@ class Strategy:
         
     def check_for_first_entry(self):
         
-        if self.locked_resistance_levels and self.current_entries == 0:
-
-            previous_minute_low = self.df1['Low'].iloc[-2]
-            current_close = self.df1['Close'].iloc[-1]
+        if self.locked_resistance_levels and self.current_entries == {}:
             
-            if previous_minute_low < self.first_entry_price < current_close:
+            if self.previous_minute_low < self.first_entry_price < self.current_close:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[0])
-                self.binance_api.market_buy(self.pair, quantity)
+                self.last_order = self.binance_api.market_buy(self.pair, quantity)
                 logging.info("Market Buy: {}".format(quantity))
                 self.twilio.message("First entry buy: {}\n"
                                     "Lower: {}\n"
                                     "Upper: {}\n"
-                                    "Target gain: {}".format(trade_size,
+                                    "Target gain: {}".format(quantity,
                                                              self.lower_resistance_level,
                                                              self.upper_resistance_level,
                                                              self.target_gain))
@@ -102,42 +103,36 @@ class Strategy:
             
     def check_for_second_entry(self):
         
-        if self.locked_resistance_levels and self.current_entries == 1:
+        if self.locked_resistance_levels and 0 in self.current_entries:
             
-            previous_minute_low = self.df1['Low'].iloc[-2]
-            current_close = self.df1['Close'].iloc[-1]
-
-            if previous_minute_low < self.second_entry_price < current_close:
+            if self.previous_minute_low < self.second_entry_price < self.current_close:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[1])
                 self.binance_api.market_buy(self.pair, quantity)
                 logging.info("Market Buy: {}".format(quantity))
                 self.twilio.message("Second entry buy: {}\n"
                                     "Lower: {}\n"
                                     "Upper: {}\n"
-                                    "Target gain: {}".format(trade_size,
+                                    "Target gain: {}".format(quantity,
                                                              self.lower_resistance_level,
                                                              self.upper_resistance_level,
                                                              self.target_gain))
 
-            self.current_entries[1] = {"entry": {"price": self.ask,
-                                                 "dt": datetime.datetime.now(),
-                                                 "quantity": quantity}}
+                self.current_entries[1] = {"entry": {"price": self.ask,
+                                                     "dt": datetime.datetime.now(),
+                                                     "quantity": quantity}}
                 
     def check_for_third_entry(self):
 
-        if self.locked_resistance_levels and self.current_entries == 2:
-
-            previous_minute_low = self.df1['Low'].iloc[-2]
-            current_close = self.df1['Close'].iloc[-1]
-
-            if previous_minute_low < self.third_entry_price < current_close:
+        if self.locked_resistance_levels and 1 in self.current_entries:
+            
+            if self.previous_minute_low < self.third_entry_price < self.current_close:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[2])
                 self.binance_api.market_buy(self.pair, quantity)
                 logging.info("Market Buy: {}".format(quantity))
                 self.twilio.message("Third entry buy: {}\n"
                                     "Lower: {}\n"
                                     "Upper: {}\n"
-                                    "Target gain: {}".format(trade_size,
+                                    "Target gain: {}".format(quantity,
                                                              self.lower_resistance_level,
                                                              self.upper_resistance_level,
                                                              self.target_gain))
@@ -147,16 +142,19 @@ class Strategy:
                                                      "quantity": quantity}}
 
     def exit_entire_trade(self):
+        
+        quantity_to_sell = 0
+        
         for entry in self.current_entries:
-            if "exit" not in entry:
-                self.binance_api.market_sell(self.pair, entry['entry']['quantity'])
+            if "exit" not in self.current_entries[entry]:
+                quantity_to_sell += self.current_entries[entry]['entry']['quantity']
                 self.current_entries[entry]['exit'] = {"price": self.bid, 
-                                                       "quantity": entry['entry']['quantity'],
+                                                       "quantity": self.current_entries[entry]['entry']['quantity'],
                                                        "dt": datetime.datetime.now()
                                                        }
                 
                 trade = Trade.create(bot_name=self.name,
-                                     quantity=self.current_entries[entry]['quantity'],
+                                     quantity=self.current_entries[entry]['entry']['quantity'],
                                      first_trade_time=self.current_entries[0]['entry']['dt'],
                                      entry_time=self.current_entries[entry]['entry']['dt'],
                                      exit_time=self.current_entries[entry]['exit']['dt'],
@@ -164,8 +162,11 @@ class Strategy:
                                      exit_price=self.current_entries[entry]['exit']['price']
                              )
 
-        self.twilio.message("Entered @ {}\nExited @ {}".format(self.current_entries[0]['entry'], self.bid))
-
+        self.twilio.message("Entered @ {}\nExited @ {}".format(self.current_entries[0]['entry']['price'], self.bid))
+        self.current_entries = {}
+        self.last_order = self.binance_api.market_sell(self.pair, quantity_to_sell)
+        
+        
     def check_stops(self):
         
         if len(self.current_entries) == 1 and self.current_entries[0]['entry']['price'] / self.bid - 1 > 0.003:
@@ -180,17 +181,23 @@ class Strategy:
         elif len(self.current_entries) == 3 and self.bid > self.upper_resistance_level:
             self.exit_entire_trade()
 
-
     def update_order_book(self):
-        quote = self.binance_api.bid_ask(self.pair)
-        self.bid = quote['bid']
-        self.ask = quote['ask']
-
-        logging.info("Bid: {} Ask: {}".format(self.bid, self.ask))
+        
+        valid, quote = self.binance_api.bid_ask(self.pair)
+        
+        if valid:
+            self.bid = quote['bid']
+            self.ask = quote['ask']
+            logging.info("Bid: {} Ask: {}".format(self.bid, self.ask))
         
     def update_historical_data(self):
-        self.df1 = self.binance_api.historical_data_1m(self.pair, 540)
-
+        
+        valid, df = self.binance_api.historical_data_1m(self.pair, 540)
+        
+        if valid:
+            self.df1 = df
+            self.previous_minute_low = self.df1['Low'].iloc[-2]
+            self.current_close = self.df1['Close'].iloc[-1]
 
     def run(self):
 
@@ -205,6 +212,7 @@ class Strategy:
 
         while True:
             schedule.run_pending()
+
 
 if __name__ == '__main__':
     strategy = Strategy()

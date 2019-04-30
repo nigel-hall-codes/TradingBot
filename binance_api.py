@@ -42,8 +42,11 @@ class BinanceAPI:
                 type=Client.ORDER_TYPE_MARKET,
                 quantity=amount
             )
+            
+            return order
         except Exception as e:
             print(e)
+            return None
         
     def dollars_to_amount(self, pair, dollars):
         try:
@@ -69,14 +72,20 @@ class BinanceAPI:
                 type=Client.ORDER_TYPE_MARKET,
                 quantity=amount
             )
+            
+            return order
 
         except Exception as e:
             print(e)
+            return None
 
     def get_trades(self, pair):
-        trades = pd.DataFrame(self.client.get_my_trades(symbol=pair))
-        trades['time'] = pd.to_datetime(trades['time'], unit='ms')
-        return trades
+        try:
+            trades = pd.DataFrame(self.client.get_my_trades(symbol=pair))
+            trades['time'] = pd.to_datetime(trades['time'], unit='ms')
+            return trades
+        except:
+            return None
     
     def last_trade(self, pair):
         return self.get_trades(pair).iloc[-1]
@@ -84,10 +93,10 @@ class BinanceAPI:
     def bid_ask(self, pair):
         try:
             ticker = self.client.get_ticker(symbol=pair)
-            return {"bid": float(ticker['bidPrice']), "ask": float(ticker['askPrice'])}
+            return True, {"bid": float(ticker['bidPrice']), "ask": float(ticker['askPrice'])}
         except Exception as e:
             print(e)
-            return None
+            return False, {"bid": None, "ask": None}
 
     def historical_data_1m(self, pair, n):
         try:
@@ -97,7 +106,7 @@ class BinanceAPI:
             df = pd.DataFrame(data)
     
             df.columns = ['OTime', 'Open', 'High', 'Low', 'Close', 'Volume', 'CTime', 'Quote Asset Volume',
-                          '# of Trades','Taker buy base asset volume', 'Taker buy quote asset volume', 'ignored']
+                          '# of Trades', 'Taker buy base asset volume', 'Taker buy quote asset volume', 'ignored']
             df['Close'] = df['Close'].astype(float)
             df['Volume'] = df['Volume'].astype(float)
             df['High'] = df['High'].astype(float)
@@ -106,11 +115,20 @@ class BinanceAPI:
             df['CTime'] = pd.to_datetime(df['CTime'], unit='ms')
             df = df.set_index('CTime')
             
-            return df
+            return True, df
         
         except Exception as e:
             print(e)
+            return False, None
+        
+    def orders(self, pair):
+        try:
+            orders = pd.DataFrame(self.client.get_all_orders(symbol=pair))
+            return orders
+        
+        except:
             return None
+            
         
 
 
