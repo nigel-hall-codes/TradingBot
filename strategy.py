@@ -54,25 +54,27 @@ class Strategy:
         
     def update_least_resistance_levels(self):
         
-        df1 = self.df1
-        df1['vol ob score'] = scale(df1['Volume'])
-        df2 = df1[df1.index > datetime.datetime.now() - datetime.timedelta(hours=8)]
-        level_bins = pd.qcut(df2['Close'].sort_values(), 4, duplicates='drop')
-        grouped_levels = df2.groupby(level_bins)['vol ob score'].mean().sort_values(ascending=False).reset_index().sort_index()
-        grouped_levels['R-Level'] = pd.Series(pd.IntervalIndex(grouped_levels['Close']).right)
-        grouped_levels['S-Level'] = pd.Series(pd.IntervalIndex(grouped_levels['Close']).left)
-        least_resistance = grouped_levels[grouped_levels['vol ob score'] == grouped_levels['vol ob score'].min()]
+        if not self.locked_resistance_levels:
         
-        self.lower_resistance_level = float(least_resistance['S-Level'].values[0])
-        self.upper_resistance_level = float(least_resistance['R-Level'].values[0])
-        self.target_gain = self.upper_resistance_level / self.lower_resistance_level - 1
-        self.first_entry_price = self.lower_resistance_level
-        self.second_entry_price = self.lower_resistance_level * (1 + (self.target_gain * self.entry_point_scale[1]))
-        self.third_entry_price = self.lower_resistance_level * (1 + (self.target_gain * self.entry_point_scale[2]))                                                  
-        logging.info("Lower: {} Upper: {} Target Gain: {}".format(self.lower_resistance_level,
-                                                                  self.upper_resistance_level,
-                                                                  self.target_gain))
-        
+            df1 = self.df1
+            df1['vol ob score'] = scale(df1['Volume'])
+            df2 = df1[df1.index > datetime.datetime.now() - datetime.timedelta(hours=8)]
+            level_bins = pd.qcut(df2['Close'].sort_values(), 4, duplicates='drop')
+            grouped_levels = df2.groupby(level_bins)['vol ob score'].mean().sort_values(ascending=False).reset_index().sort_index()
+            grouped_levels['R-Level'] = pd.Series(pd.IntervalIndex(grouped_levels['Close']).right)
+            grouped_levels['S-Level'] = pd.Series(pd.IntervalIndex(grouped_levels['Close']).left)
+            least_resistance = grouped_levels[grouped_levels['vol ob score'] == grouped_levels['vol ob score'].min()]
+            
+            self.lower_resistance_level = float(least_resistance['S-Level'].values[0])
+            self.upper_resistance_level = float(least_resistance['R-Level'].values[0])
+            self.target_gain = self.upper_resistance_level / self.lower_resistance_level - 1
+            self.first_entry_price = self.lower_resistance_level
+            self.second_entry_price = self.lower_resistance_level * (1 + (self.target_gain * self.entry_point_scale[1]))
+            self.third_entry_price = self.lower_resistance_level * (1 + (self.target_gain * self.entry_point_scale[2]))                                                  
+            logging.info("Lower: {} Upper: {} Target Gain: {}".format(self.lower_resistance_level,
+                                                                      self.upper_resistance_level,
+                                                                      self.target_gain))
+            
     def check_resistance_level_lock_status(self):
         
         if self.upper_resistance_level / self.lower_resistance_level - 1 > 0.006:
