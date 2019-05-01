@@ -103,7 +103,7 @@ class Strategy:
             
     def check_for_second_entry(self):
         
-        if self.locked_resistance_levels and 0 in self.current_entries:
+        if self.locked_resistance_levels and 0 in self.current_entries and 1 not in self.current_entries:
             
             if self.previous_minute_low < self.second_entry_price < self.current_close:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[1])
@@ -123,7 +123,7 @@ class Strategy:
                 
     def check_for_third_entry(self):
 
-        if self.locked_resistance_levels and 1 in self.current_entries:
+        if self.locked_resistance_levels and 1 in self.current_entries and 2 not in self.current_entries:
             
             if self.previous_minute_low < self.third_entry_price < self.current_close:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[2])

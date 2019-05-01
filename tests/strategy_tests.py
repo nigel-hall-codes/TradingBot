@@ -49,7 +49,7 @@ class StrategyTests(unittest.TestCase):
         self.binance_api.market_sell("ETHUSDT", float(self.s.current_entries[1]['entry']['quantity']))
 
     def test_positive_third_entry(self):
-        
+                
         self.s.locked_resistance_levels = True
         self.s.third_entry_price = self.s.ask
         self.s.previous_minute_low = self.s.third_entry_price - 1
@@ -91,3 +91,5 @@ class StrategyTests(unittest.TestCase):
     
 if __name__ == '__main__':
     unittest.main()
+    
+    
