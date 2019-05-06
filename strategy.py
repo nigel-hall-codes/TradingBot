@@ -90,11 +90,12 @@ class Strategy:
             if self.previous_minute_low < self.first_entry_price < self.current_close:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[0])
                 self.last_order = self.binance_api.market_buy(self.pair, quantity)
-                logging.info("Market Buy: {}".format(quantity))
-                self.twilio.message("First entry buy: {}\n"
+                logging.info("Market Buy: {} ".format(quantity))
+                self.twilio.message("First entry buy: {} @ {}\n"
                                     "Lower: {}\n"
                                     "Upper: {}\n"
                                     "Target gain: {}".format(quantity,
+                                                             self.ask,
                                                              self.lower_resistance_level,
                                                              self.upper_resistance_level,
                                                              self.target_gain))
@@ -111,10 +112,11 @@ class Strategy:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[1])
                 self.binance_api.market_buy(self.pair, quantity)
                 logging.info("Market Buy: {}".format(quantity))
-                self.twilio.message("Second entry buy: {}\n"
+                self.twilio.message("Second entry buy: {} @ {}\n"
                                     "Lower: {}\n"
                                     "Upper: {}\n"
                                     "Target gain: {}".format(quantity,
+                                                             self.ask,
                                                              self.lower_resistance_level,
                                                              self.upper_resistance_level,
                                                              self.target_gain))
@@ -131,10 +133,11 @@ class Strategy:
                 quantity = self.binance_api.dollars_to_amount(self.pair, self.max_per_trade * self.trade_size_scale[2])
                 self.binance_api.market_buy(self.pair, quantity)
                 logging.info("Market Buy: {}".format(quantity))
-                self.twilio.message("Third entry buy: {}\n"
+                self.twilio.message("Third entry buy: {} @ {}\n"
                                     "Lower: {}\n"
                                     "Upper: {}\n"
                                     "Target gain: {}".format(quantity,
+                                                             self.ask,
                                                              self.lower_resistance_level,
                                                              self.upper_resistance_level,
                                                              self.target_gain))
@@ -146,6 +149,7 @@ class Strategy:
     def exit_entire_trade(self):
         
         quantity_to_sell = 0
+        total_return = 0
         
         for entry in self.current_entries:
             if "exit" not in self.current_entries[entry]:
@@ -155,16 +159,25 @@ class Strategy:
                                                        "dt": datetime.datetime.now()
                                                        }
                 
+                entry_price = self.current_entries[entry]['entry']['price']
+                exit_price = self.current_entries[entry]['exit']['price']
+                
                 trade = Trade.create(bot_name=self.name,
                                      quantity=self.current_entries[entry]['entry']['quantity'],
                                      first_trade_time=self.current_entries[0]['entry']['dt'],
                                      entry_time=self.current_entries[entry]['entry']['dt'],
                                      exit_time=self.current_entries[entry]['exit']['dt'],
-                                     entry_price=self.current_entries[entry]['exit']['price'],
+                                     entry_price=self.current_entries[entry]['entry']['price'],
                                      exit_price=self.current_entries[entry]['exit']['price']
                              )
-
-        self.twilio.message("Entered @ {}\nExited @ {}".format(self.current_entries[0]['entry']['price'], self.bid))
+                
+                total_return += (exit_price / entry_price - 1)
+                
+        dollar_return = quantity_to_sell * (total_return - 0.0015)
+        self.twilio.message("Entered @ {}\nExited @ {}\nAverage Return {}\nTotal Return {}".format(self.current_entries[0]['entry']['price'], 
+                                                                                                   self.bid,
+                                                                                                   (total_return / len(self.current_entries)),
+                                                                                                   dollar_return))
         self.current_entries = {}
         self.last_order = self.binance_api.market_sell(self.pair, quantity_to_sell)
         

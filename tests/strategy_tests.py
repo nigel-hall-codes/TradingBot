@@ -87,7 +87,7 @@ class StrategyTests(unittest.TestCase):
         assert type(self.s.lower_resistance_level) is float and type(self.s.upper_resistance_level) is float
         
 
-        
+    
     
 if __name__ == '__main__':
     unittest.main()

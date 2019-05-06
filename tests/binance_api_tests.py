@@ -23,7 +23,7 @@ class BinanceAPITests(unittest.TestCase):
         last_trade = self.binance_api.last_trade(pair)
         time.sleep(2)
         time_since_last_trade = self.binance_api.get_server_time() - last_trade['time']
-        assert  time_since_last_trade < pd.Timedelta(minutes=1)
+        assert time_since_last_trade < pd.Timedelta(minutes=1)
 
         self.binance_api.market_sell(pair, amount_to_test)
 
@@ -52,6 +52,8 @@ class BinanceAPITests(unittest.TestCase):
     def test_1m_data(self):
         df = self.binance_api.historical_data_1m("BTCUSDT", 540)
         assert df.shape[0] == 540
+        
+        
         
 
 if __name__ == '__main__':
