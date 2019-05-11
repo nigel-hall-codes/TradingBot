@@ -12,11 +12,12 @@ class BinanceAPITests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         credentials = Credentials()
-        cls.binance_api = BinanceAPI(credentials.key, credentials.secret)
+   
+        cls.binance_api = BinanceAPI(credentials.binance_key, credentials.binance_secret)
 
     def test_market_buy(self):
         
-        pair = 'XRPUSDT'
+        pair = 'ETHUSDT'
         amount_to_test = self.binance_api.dollars_to_amount(pair, 40)
 
         self.binance_api.market_buy(pair, amount_to_test)
@@ -29,7 +30,7 @@ class BinanceAPITests(unittest.TestCase):
 
     def test_market_sell(self):
 
-        pair = "XRPUSDT"
+        pair = "ETHUSDT"
         amount_to_test = self.binance_api.dollars_to_amount(pair, 40)
 
         self.binance_api.market_buy(pair, amount_to_test)
@@ -43,14 +44,14 @@ class BinanceAPITests(unittest.TestCase):
         assert time_since_last_trade < pd.Timedelta(minutes=1) and not last_trade['isBuyer']
         
     def test_dollar_to_amount(self):
-        assert type(self.binance_api.dollars_to_amount("XRPUSDT", 50)) is float
+        assert type(self.binance_api.dollars_to_amount("ETHUSDT", 50)) is float
         
     def test_bid_ask(self):
-        bid_ask = self.binance_api.bid_ask("BTCUSDT")
+        bid_ask = self.binance_api.bid_ask("ETHUSDT")
         assert type(bid_ask['bid']) is float and type(bid_ask['ask']) is float
 
     def test_1m_data(self):
-        df = self.binance_api.historical_data_1m("BTCUSDT", 540)
+        df = self.binance_api.historical_data_1m("ETHUSDT", 540)
         assert df.shape[0] == 540
         
         

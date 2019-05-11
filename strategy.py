@@ -40,7 +40,7 @@ class Strategy:
         self.pair = "ETHUSDT"
         self.max_per_trade = 100
         self.trade_size_scale = [.2, .6, .2]
-        self.entry_point_scale = [0, .25, .6]
+        self.entry_point_scale = [0, .33, .66]
 
         self.update_order_book()
         self.update_historical_data()
@@ -168,7 +168,10 @@ class Strategy:
                                      entry_time=self.current_entries[entry]['entry']['dt'],
                                      exit_time=self.current_entries[entry]['exit']['dt'],
                                      entry_price=self.current_entries[entry]['entry']['price'],
-                                     exit_price=self.current_entries[entry]['exit']['price']
+                                     exit_price=self.current_entries[entry]['exit']['price'],
+                                     target_entry=self.lower_resistance_level,
+                                     target_exit=self.upper_resistance_level,
+                                     entry_level=entry,
                              )
                 
                 total_return += (exit_price / entry_price - 1)
@@ -176,10 +179,10 @@ class Strategy:
         dollar_return = quantity_to_sell * (total_return - 0.0015)
         self.twilio.message("Entered @ {}\nExited @ {}\nAverage Return {}\nTotal Return {}".format(self.current_entries[0]['entry']['price'], 
                                                                                                    self.bid,
-                                                                                                   (total_return / len(self.current_entries)),
-                                                                                                   dollar_return))
+                                                                                                   (total_return / len(self.current_entries)),                                                                                  dollar_return))
         self.current_entries = {}
         self.last_order = self.binance_api.market_sell(self.pair, quantity_to_sell)
+        self.locked_resistance_levels = False
         
         
     def check_stops(self):
@@ -216,7 +219,7 @@ class Strategy:
 
     def run(self):
 
-        schedule.every(5).seconds.do(self.check_for_first_entry)
+        schedule.every(1).minute.do(self.check_for_first_entry)
         schedule.every(5).seconds.do(self.check_for_second_entry)
         schedule.every(5).seconds.do(self.check_for_third_entry)
         schedule.every(10).seconds.do(self.update_historical_data)

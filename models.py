@@ -14,6 +14,9 @@ class Trade(Model):
     exit_price = FloatField()
     entry_time = DateTimeField()
     exit_time = DateTimeField()
+    target_entry = FloatField()
+    target_exit_entry = FloatField()
+    entry_level = IntegerField()
     
     class Meta:
         database = db
