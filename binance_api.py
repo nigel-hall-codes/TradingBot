@@ -114,7 +114,7 @@ class BinanceAPI:
             df['pair'] = pair
             df['CTime'] = pd.to_datetime(df['CTime'], unit='ms')
             df = df.set_index('CTime')
-            
+            assert df.shape[0] >= (n - 1)
             return True, df
         
         except Exception as e:
