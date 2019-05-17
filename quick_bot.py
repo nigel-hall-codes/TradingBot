@@ -20,12 +20,12 @@ class SimpleSupportResistanceBot:
         self.twilio = TwilioMessaging()
         self.bid = None
         self.ask = None
-        self.pair = sys.argv[1]
-        self.entry_price = float(sys.argv[2])
-        self.exit_price = float(sys.argv[3])
-        self.trade_size_usdt = float(sys.argv[5])
+        self.pair = sys.argv[2]
+        self.entry_price = float(sys.argv[3])
+        self.exit_price = float(sys.argv[4])
+        self.trade_size_usdt = float(sys.argv[6])
         self.trade_size_coin = float(self.binance_api.dollars_to_amount(self.pair, self.trade_size_usdt))
-        self.stop_loss = float(sys.argv[4])
+        self.stop_loss = float(sys.argv[5])
         self.in_position = False
         self.shutdown_bot = False
 
