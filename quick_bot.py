@@ -15,19 +15,21 @@ logging.getLogger('schedule').propagate = False
 class SimpleSupportResistanceBot:
     
     def __init__(self):
+        print(sys.argv)
         credentials = Credentials()
         self.binance_api = BinanceAPI(credentials.binance_key, credentials.binance_secret)
         self.twilio = TwilioMessaging()
         self.bid = None
         self.ask = None
-        self.pair = sys.argv[2]
-        self.entry_price = float(sys.argv[3])
-        self.exit_price = float(sys.argv[4])
-        self.trade_size_usdt = float(sys.argv[6])
+        self.pair = sys.argv[1]
+        self.entry_price = float(sys.argv[2])
+        self.exit_price = float(sys.argv[3])
+        self.trade_size_usdt = float(sys.argv[5])
         self.trade_size_coin = float(self.binance_api.dollars_to_amount(self.pair, self.trade_size_usdt))
-        self.stop_loss = float(sys.argv[5])
+        self.stop_loss = float(sys.argv[4])
         self.in_position = False
         self.shutdown_bot = False
+
 
 
         self.update_order_book()

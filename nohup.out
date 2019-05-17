@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "quick_bot.py", line 86, in <module>
+    s = SimpleSupportResistanceBot()
+  File "quick_bot.py", line 26, in __init__
+    self.trade_size_usdt = float(sys.argv[6])
+IndexError: list index out of range
+['quick_bot.py', 'ETHUSDT', '226', '223', '232', '34']
+Traceback (most recent call last):
+  File "quick_bot.py", line 88, in <module>
+    s = SimpleSupportResistanceBot()
+  File "quick_bot.py", line 27, in __init__
+    self.trade_size_usdt = float(sys.argv[6])
+IndexError: list index out of range
