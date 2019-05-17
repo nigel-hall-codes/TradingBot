@@ -104,6 +104,8 @@ class BinanceAPI:
                                                      Client.KLINE_INTERVAL_1MINUTE,
                                                      "%s minutes ago UTC" % str(n))
             df = pd.DataFrame(data)
+            
+            print(df.shape)
     
             df.columns = ['OTime', 'Open', 'High', 'Low', 'Close', 'Volume', 'CTime', 'Quote Asset Volume',
                           '# of Trades', 'Taker buy base asset volume', 'Taker buy quote asset volume', 'ignored']
@@ -114,7 +116,8 @@ class BinanceAPI:
             df['pair'] = pair
             df['CTime'] = pd.to_datetime(df['CTime'], unit='ms')
             df = df.set_index('CTime')
-            assert df.shape[0] >= (n - 1)
+            print(df)
+           
             return True, df
         
         except Exception as e:

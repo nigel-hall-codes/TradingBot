@@ -47,12 +47,16 @@ class BinanceAPITests(unittest.TestCase):
         assert type(self.binance_api.dollars_to_amount("ETHUSDT", 50)) is float
         
     def test_bid_ask(self):
-        bid_ask = self.binance_api.bid_ask("ETHUSDT")
+        valid, bid_ask = self.binance_api.bid_ask("ETHUSDT")
+
         assert type(bid_ask['bid']) is float and type(bid_ask['ask']) is float
 
     def test_1m_data(self):
-        df = self.binance_api.historical_data_1m("ETHUSDT", 540)
+        valid, df = self.binance_api.historical_data_1m("ETHUSDT", 540)
+
         assert df.shape[0] == 540
+        
+    
         
         
         

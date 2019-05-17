@@ -230,6 +230,7 @@ class Strategy:
 
         while True:
             schedule.run_pending()
+            time.sleep(2)
 
 
 if __name__ == '__main__':
