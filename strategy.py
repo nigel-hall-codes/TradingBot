@@ -9,6 +9,7 @@ from twilio_messaging import TwilioMessaging
 from models import Trade
 import os
 import models
+import time
 
 logging.basicConfig(filename="strategy.log", level=logging.INFO, format='%(asctime)s:%(message)s')
 logging.getLogger('schedule').propagate = False

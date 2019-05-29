@@ -7,6 +7,7 @@ import os
 import traceback
 
 
+
 class BinanceAPI:
     
     def __init__(self, key, secret):
