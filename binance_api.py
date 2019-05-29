@@ -117,8 +117,7 @@ class BinanceAPI:
             df['pair'] = pair
             df['CTime'] = pd.to_datetime(df['CTime'], unit='ms')
             df = df.set_index('CTime')
-            print(df)
-           
+
             return True, df
         
         except Exception as e:
